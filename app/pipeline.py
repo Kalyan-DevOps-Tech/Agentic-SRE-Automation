@@ -40,10 +40,22 @@ def process_alert(alert: dict) -> dict:
             "Any remediation must be reviewed and approved by an authorized engineer."
         ]
     }
-    sent = send_email(
-        subject=f"[SRE {alert.get('severity','warning').upper()}] {alert.get('service','unknown')}: {alert.get('title','Alert')}",
-        body=json.dumps(incident, indent=2, ensure_ascii=False),
-        recipients=EMAIL_TO
-    )
-    record_alert(alert, "notified" if sent else "triaged_email_not_configured", analysis.get("summary", ""), dedup_key=key)
+    try:
+        sent = send_email(
+            subject=(
+                f"[SRE {alert.get('severity', 'warning').upper()}] "
+                f"{alert.get('service', 'unknown')}: "
+                f"{alert.get('title', 'Alert')}"
+            ),
+            body=json.dumps(incident, indent=2, ensure_ascii=False),
+            recipients=EMAIL_TO,
+        )
+    except Exception:
+        sent = False
+        email_status = "email_failed"
+    else:
+        email_status = (
+            "notified" if sent else "triaged_email_not_configured"
+        )
+    record_alert(alert, email_status, analysis.get("summary", ""), dedup_key=key)
     return {"accepted": True, "action": "triaged", "notified": sent, "dedup_key_hash": key, "analysis": analysis}
