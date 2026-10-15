@@ -122,10 +122,10 @@ def test_invalid_webhook_token_returns_401(monkeypatch):
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid webhook token"
 
-
 def test_smtp_failure_is_handled_safely(
-    monkeypatch, sample_alert, isolate_pipeline
+    monkeypatch, sample_alert, isolate_pipeline, caplog
 ):
+    import logging
     def fail_email(**kwargs):
         raise RuntimeError("Simulated SMTP failure")
 
