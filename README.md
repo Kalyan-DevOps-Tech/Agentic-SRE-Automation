@@ -1,3 +1,5 @@
+[![SRE Automation CI](https://github.com/Kalyan-DevOps-Tech/Agentic-SRE-Automation/actions/workflows/ci.yml/badge.svg)](https://github.com/Kalyan-DevOps-Tech/Agentic-SRE-Automation/actions/workflows/ci.yml)
+
 # Agentic SRE Alert Triage and Email Automation
 
 A Git-ready starter project for reducing noisy SRE alerts. It receives alerts from a monitoring platform, suppresses repeated notifications during a cooldown window, gathers optional read-only evidence, performs rule-based or optional LLM-assisted triage, and sends a structured email to the on-call team.
@@ -27,6 +29,49 @@ A production `checkout-api` deployment starts reporting CPU above 90%, increasin
 This is a practical starter, not a full autonomous incident-management platform. The included correlation is deduplication by key; richer cross-alert correlation can be added using service, cluster, time window, and shared trace/deployment identifiers.
 
 ## Architecture
+                                      Datadog / Manual Alert
+                                              |
+                                              |
+                                              |
+                                        FastAPI Webhook
+                                              |
+                                              |
+                                              |
+                                     Webhook Token Valid?
+                                              |
+                                      ------------------
+                                    |                    |
+                                    |                    |
+                                   No                   Yes
+                                    |                    |
+                                HTTP 401           Normalize Alert
+                                                         |
+                                                         |
+                                                         |
+                                                Resolved or Duplicate?
+                                                         |
+                                 --------------------------------------------------
+                               |                         |                          |
+                               |                         |                          |
+                           Resolved                  Duplicate                  New Alert
+                               |                         |                          |
+                               |                         |                          |
+                    SQLite Audit: resolved    SQLite Audit: suppressed   Read-only KubernetesEvidence
+                                                                                    |
+                                                                                    |
+                                                                      Rule-based / Optional LLMTriage
+                                                                                    |
+                                                                                    |
+                                                                         Attempt Email Notification
+                                                                                    |
+                                                                                    |
+                                                                          Record Outcome in SQLite
+                                                                                    |
+                                                                                    |
+                                                                            SRE / On-call Team
+
+
+
 
 ```text
 Datadog / Prometheus Alertmanager
@@ -132,6 +177,32 @@ pytest -q
 - Add unit/integration tests for the exact Datadog/Alertmanager payloads.
 - Use least-privilege RBAC and read-only checks by default.
 - Require human approval for remediation, with audit logs and rollback procedures.
+
+Automated validation
+
+The project includes automated tests for:
+
+Critical-alert email notification.
+
+Duplicate-alert suppression.
+
+Resolved-alert handling.
+
+Invalid webhook-token rejection.
+
+SMTP failure handling and audit status.
+
+Run the test suite locally:
+
+## python -m pytest -q
+
+Compile the application and tests:
+
+## python -m compileall -q app tests
+
+The current local test suite has passed 6 tests. GitHub Actions also runs Python compilation, pytest, and a Docker image build on configured pushes and pull requests.
+
+Test results describe the latest verified run; check the GitHub Actions page for the current CI status.
 
 ## Suggested Git repository description
 
