@@ -131,9 +131,12 @@ def test_smtp_failure_is_handled_safely(
 
     monkeypatch.setattr(pipeline, "send_email", fail_email)
 
-    result = pipeline.process_alert(sample_alert)
+    with caplog.at_level(logging.ERROR, logger="app.pipeline"):
+        result = pipeline.process_alert(sample_alert)
 
     assert result["accepted"] is True
     assert result["action"] == "triaged"
     assert result["notified"] is False
     assert "email_failed" in isolate_pipeline
+    assert "Email delivery failed" in caplog.text
+    assert "checkout-api" in caplog.text
